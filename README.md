@@ -1,51 +1,43 @@
-# Mediatek IMS
+# MediaTek IMS for the malachite revival
 
-* This repository provides a prebuilt IMS (IP Multimedia Subsystem) package for Mediatek devices, rebuilt and adapted to work seamlessly with **AOSP 16** and newer.
-* The aim is to eliminate the dependency on scattered Mediatek ELF blobs and tightly-coupled proprietary components that frequently break with each AOSP release.
+This owned fork supplies the prebuilt `ImsService` APK, two runtime resource overlays, permissions, sysconfig and the product fragment `ims.mk`. The initial source baseline is `lineage-23.2` at `06c462f1dfc2bb62e70e1d827b14bb364dc97857`. This is a source-revision record, not certification of carrier registration or Android-version compatibility.
 
-## ✨ Features
+## Integration
 
-- ✅ **Unified IMS Package**: Includes all necessary Mediatek IMS framework components in a single APK.
-- ✅ **Commonized IMS**: If your stock blobs are from VNDK S & above vendor, this ims package will work for your seamlessly.
-- ✅ **No External Blobs Required**: Eliminates the need for individual ELF blobs like `libmtk_vt_service.so, vtservice`, etc.
-- ✅ **AOSP 16+ Compatible**: Rebuilt and tested against AOSP 16 sources.
-- ✅ **Plug-and-Play**: Just include the `ims.mk` Makefile — no more hacks or blob chases.
+Use the project's pinned Android local manifest where available. For a standalone source checkout:
 
-## 📦 How it works?
-
-* Basically the mtk-ims is built on AOSP codebase with all dependencies and framework included in same APK :).
-
-## 🚀 Integration Guide
-
-1. **Clone this repository to your AOSP source tree**,:
-
-```
-git clone https://github.com/techyminati/android_vendor_mediatek_ims vendor/mediatek/ims/
+```sh
+git clone --branch lineage-23.2 https://github.com/cmdr-chara/android_vendor_mediatek_ims vendor/mediatek/ims
 ```
 
-2. **In your device-specific product makefile**, inherit the IMS configuration:
+A branch moves. Record the reviewed commit in the coordinated workspace lock and capture `repo manifest -r` for each build. Review candidates may be on `revival/*` branches until their PRs are integrated.
 
-```
+In the device product:
+
+```make
 $(call inherit-product, vendor/mediatek/ims/ims.mk)
 ```
 
-3. **Build AOSP** as usual. The prebuilt APK, overlays & properties will be included automatically.
+The fragment uses `MTK_IMS_PATH` for its own resources and must not overwrite the caller's `LOCAL_PATH`. Package names, feature properties and copy destinations remain compatible with the inspected baseline.
 
-## 🛠️ Build Behavior
+## Compatibility and provenance gates
 
-* The included APK is signed and ready to use.
-* No need to build additional Mediatek-specific services or framework jars.
-* IMS registration, VoLTE, and VoWiFi functionalities (where supported) should work out-of-the-box. [ViLTE may/may not work]
+`Android.bp` and `Android.mk` define the actual APK installation/signing behavior. The checked-in APK is a prebuilt; this repository is not evidence of a reproducible rebuild of all proprietary IMS components. Its latest baseline update refers to the patched IMS work in [Nothing-2A/android_device_nothing_Aerodactyl](https://github.com/Nothing-2A/android_device_nothing_Aerodactyl/commit/4abe46a3867bf3214ab39abac23630ef8c84e124). Preserve that history and establish source/APK hashes and signature provenance before replacing it.
 
-## ❗Disclaimer
+The package does not remove the device's dependency on a compatible radio HAL, modem firmware, vendor userspace, permissions and carrier provisioning. Feature-availability properties in `ims.mk` are not proof that VoLTE or VoWiFi registered. No blanket claim is made for Android 16 or every newer version, every VNDK-S-or-newer vendor, or every carrier.
 
-* This project is intended for use by developers porting AOSP to Mediatek devices.
-* Tested on AOSP 16. Compatibility with earlier/later versions may require additional patches.
-* IMS/VoLTE features may depend on proper carrier and modem configurations.
+For malachite, keep the coordinated vendor/userspace baseline. Do not replace camera/vendor blobs with OS3 merely because the reported fingerprint is newer. Do not downgrade or cross-flash regional modem/bootloader firmware to make IMS work.
 
-## 📄 License
+## Checks
 
-This repository is licensed under Apache License 2.0
+```sh
+python3 -m unittest discover -s tests -p 'test_product_scope.py' -v
+```
 
-## About
-Maintained by [Aryan Sinha](https://github.com/techyminati)
+These offline GNU Make tests check caller scope, exact package/property/namespace/copy contracts and local XML well-formedness. They are not Kati/Soong, APK-signature, merged-VINTF or device tests.
+
+Before release, validate the APK and privileges in the actual Android build, radio/VINTF compatibility, then separately authorized on-device SIM registration, voice/SMS/data, VoLTE, VoWiFi and handover for the actual carrier/SKU. Emergency-call behavior needs a suitable authorized test arrangement; do not place unsolicited emergency calls. Collect logs without publishing subscriber identifiers or credentials.
+
+## Attribution and licensing
+
+This fork retains the upstream history and attribution, including the original work associated with [techyminati/android_vendor_mediatek_ims](https://github.com/techyminati/android_vendor_mediatek_ims). See `LICENSE` and per-file notices. Fork ownership does not change the provenance or licensing obligations of proprietary prebuilts.

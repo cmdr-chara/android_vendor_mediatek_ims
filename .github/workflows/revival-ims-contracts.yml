@@ -1,0 +1,22 @@
+name: IMS inherited-product contracts
+
+on:
+  push:
+    branches: [revival/product-scope]
+  pull_request:
+    branches: [lineage-23.2]
+    paths: [ims.mk, configs/**, tests/**, .github/workflows/revival-ims-contracts.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  product-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Evaluate the actual product fragment with GNU Make
+        run: python3 -m unittest discover -s tests -p 'test_product_scope.py' -v
